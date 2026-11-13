@@ -1,4 +1,4 @@
-﻿# Vaglio - SpamAssassin Blacklist Manager
+# Vaglio - SpamAssassin Blacklist Manager
 
 Un vaglio separa il grano dalla pula. Vaglio separa i domini spam dal resto e li aggiunge alla blacklist di SpamAssassin su uno o più account cPanel, via SSH, senza entrare nel pannello.
 
