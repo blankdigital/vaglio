@@ -22,7 +22,8 @@
                  Text="Voci blacklist_from del server. Puoi eliminarne una o più, oppure cambiare il dominio di una voce nella forma *@dominio."/>
 
       <Label x:Name="EtVoci" Content="_Voci" Target="{Binding ElementName=LstVoci}"/>
-      <ListView x:Name="LstVoci" MinHeight="200" Background="{StaticResource Surf}"
+      <!-- Altezza fissa: dentro un ScrollViewer una lista senza altezza non mostra le righe. -->
+      <ListView x:Name="LstVoci" Height="360" Background="{StaticResource Surf}"
                 Foreground="{StaticResource Fg}" BorderBrush="{StaticResource Border}" BorderThickness="1"
                 SelectionMode="Extended"
                 AutomationProperties.Name="Voci della blacklist"
