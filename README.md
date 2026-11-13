@@ -1,4 +1,4 @@
-# Vaglio - SpamAssassin Blacklist Manager
+﻿# Vaglio - SpamAssassin Blacklist Manager
 
 Un vaglio separa il grano dalla pula. Vaglio separa i domini spam dal resto e li aggiunge alla blacklist di SpamAssassin su uno o più account cPanel, via SSH, senza entrare nel pannello.
 
@@ -22,7 +22,7 @@ git clone https://github.com/blankdigital/vaglio.git
 cd vaglio
 ```
 
-Per la finestra grafica, doppio clic su `Vaglio.cmd`.
+Per la finestra grafica, doppio clic su `Vaglio.vbs`. Il file avvia la GUI senza console. Per un collegamento sul Desktop: destinazione `wscript.exe //B "<percorso>\Vaglio.vbs"`.
 
 ## Account
 
