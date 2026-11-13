@@ -74,7 +74,7 @@ Accetta anche indirizzi e URL: `user@spam.com`, `mailto:user@spam.com`, `https:/
 ## Come funziona
 
 1. Normalizza ogni token in un dominio e scarta quelli non validi, con un avviso.
-2. Invia lo script remoto (`remote.sh`) al server in base64. Il base64 evita problemi di quoting e il BOM che PowerShell aggiunge ai dati passati a programmi esterni.
+2. Invia lo script remoto (`remote.sh`) al server in base64, dentro il comando SSH. Il base64 è solo ASCII: niente problemi di quoting né di BOM UTF-8 lungo la pipeline verso `ssh`.
 3. Il server controlla quali domini sono già presenti (`GIA`) e quali sono nuovi (`NUOVO`).
 4. Con `-Apply`: copia il file `user_prefs` in locale e sul server (`.bak-AAAAMMGG-HHMMSS`), aggiunge le righe nuove dopo l'ultima `blacklist_from` e rilegge il file.
 5. Se un dominio non risulta nel file riletto, lo script si ferma con errore.
