@@ -1,4 +1,4 @@
-﻿# Vaglio, interfaccia grafica. Avvio: doppio clic su Vaglio.cmd, oppure
+﻿# Vaglio, interfaccia grafica. Avvio: doppio clic su Vaglio.vbs, oppure
 #   powershell -STA -File vaglio-gui.ps1
 
 # WPF richiede un thread STA. Se lo script arriva in MTA, si riavvia con -STA.
@@ -11,6 +11,9 @@ Add-Type -AssemblyName PresentationFramework, PresentationCore, WindowsBase, Sys
 . (Join-Path $PSScriptRoot 'lib\Vaglio.Core.ps1')
 . (Join-Path $PSScriptRoot 'lib\Vaglio.Config.ps1')
 . (Join-Path $PSScriptRoot 'lib\Vaglio.Tema.ps1')
+
+# Regola di progetto: le callback (GetNewClosure) non leggono mai $script:. Chiamano funzioni a livello di script,
+# passando il risultato e un contesto. Dentro un closure creato in una funzione, $script: punta a un altro scope.
 
 $script:Palette = Get-VaglioPalette
 
@@ -25,6 +28,12 @@ function New-VaglioFinestra([string]$file) {
     $ico = Join-Path $PSScriptRoot 'assets\vaglio.ico'
     if (Test-Path -LiteralPath $ico) { $finestra.Icon = [System.Windows.Media.Imaging.BitmapFrame]::Create([Uri]::new($ico)) }
     $finestra
+}
+
+# Riempie un elenco con un ciclo. ItemsSource da una pipeline restava vuoto: si usa Items.Add.
+function Set-VaglioElenco($controllo, $voci) {
+    $controllo.Items.Clear()
+    foreach ($v in $voci) { [void]$controllo.Items.Add($v) }
 }
 
 function Get-Controlli($finestra, [string[]]$nomi) {
@@ -149,6 +158,45 @@ function Start-VaglioLavoro {
     $timer.Start()
 }
 
+# ---- Anteprima e scrittura sugli account ----
+
+function Show-EsitoAnteprima($r, $ctx) {
+    Set-Occupato $false
+    if (-not $r.Ok) { Show-Errore $r.Errore $ui.LstAccount; return }
+    $esiti = @($r.Dati)
+    $righe = @(ConvertTo-VaglioRighePiatte $esiti)
+    Set-VaglioElenco ($ui.LstEsito) $righe
+    $daScrivere = @($esiti | Where-Object { $_.Ok -and (@($_.Righe | Where-Object { $_.Tipo -eq 'NUOVO' })).Count -gt 0 } | ForEach-Object { $_.Account })
+    $nuovi = @($righe | Where-Object { $_.Tipo -eq 'NUOVO' }).Count
+    $presenti = @($righe | Where-Object { $_.Tipo -eq 'GIA' }).Count
+    $fallite = @($esiti | Where-Object { -not $_.Ok } | ForEach-Object { $_.Account })
+    $script:Ultima = [pscustomobject]@{ Destinazioni = $ctx.Destinazioni; Domini = $ctx.Domini; DaScrivere = $daScrivere }
+    $ui.BtnScrivi.IsEnabled = ($daScrivere.Count -gt 0)
+    $testo = "Anteprima: $nuovi nuovi, $presenti già presenti, su $($esiti.Count) account. Non è stato scritto nulla."
+    if ($fallite) { $testo += ' Non raggiungibili: ' + ($fallite -join ', ') + '.' }
+    Set-Stato ($testo + $ctx.Avviso)
+}
+
+function Show-EsitoScrittura($r) {
+    Set-Occupato $false
+    if (-not $r.Ok) { Show-Errore $r.Errore $ui.LstAccount; return }
+    $esiti = @($r.Dati)
+    $righe = @($esiti | ForEach-Object {
+        if ($_.Ok) {
+            [pscustomobject]@{ Account = $_.Account; Stato = 'Scritto'; Dominio = "$($_.Esito.Verificati) domini verificati sul server, $($_.Esito.Aggiunti) aggiunti" }
+        } else {
+            [pscustomobject]@{ Account = $_.Account; Stato = 'Errore'; Dominio = $_.Errore }
+        }
+    })
+    Set-VaglioElenco ($ui.LstEsito) $righe
+    $script:Ultima = $null
+    $ui.BtnScrivi.IsEnabled = $false
+    $ko = @($esiti | Where-Object { -not $_.Ok })
+    $testo = "Scrittura completata su $($esiti.Count - $ko.Count) di $($esiti.Count) account. Copie locali in: $cartellaBackup. Rifai l'anteprima per aggiornare l'elenco."
+    if ($ko) { $testo += ' Errori: ' + (($ko | ForEach-Object { $_.Account }) -join ', ') + '.' }
+    Set-Stato $testo
+}
+
 $ui.LstAccount.Add_SelectionChanged({ Invalidate-Anteprima })
 $ui.TxtDomini.Add_TextChanged({ Invalidate-Anteprima })
 foreach ($r in @($ui.RbUno, $ui.RbAlcuni, $ui.RbTutti)) {
@@ -164,25 +212,12 @@ $ui.BtnAnteprima.Add_Click({
     if (-not $esame.Validi) { Show-Errore 'Nessun dominio valido. Controlla il testo dei domini.' $ui.TxtDomini; return }
 
     $avviso = if ($esame.Scartati) { ' Non sono domini e vengono ignorati: ' + ($esame.Scartati -join ', ') + '.' } else { '' }
-    $domini = $esame.Validi
+    $ctx = @{ Destinazioni = $destinazioni; Domini = $esame.Validi; Avviso = $avviso }
     Set-Occupato $true
     Set-Stato ('Controllo su ' + $destinazioni.Count + ' account in corso.' + $avviso)
-    Start-VaglioLavoro -Tipo 'Anteprima' -Parametri @{ Account = $destinazioni; Domini = $domini } -AllaFine {
+    Start-VaglioLavoro -Tipo 'Anteprima' -Parametri @{ Account = $destinazioni; Domini = $esame.Validi } -AllaFine {
         param($r)
-        Set-Occupato $false
-        if (-not $r.Ok) { Show-Errore $r.Errore $ui.LstAccount; return }
-        $esiti = @($r.Dati)
-        $righe = @(ConvertTo-VaglioRighePiatte $esiti)
-        $ui.LstEsito.ItemsSource = $righe
-        $daScrivere = @($esiti | Where-Object { $_.Ok -and (@($_.Righe | Where-Object { $_.Tipo -eq 'NUOVO' })).Count -gt 0 } | ForEach-Object { $_.Account })
-        $nuovi = @($righe | Where-Object { $_.Tipo -eq 'NUOVO' }).Count
-        $presenti = @($righe | Where-Object { $_.Tipo -eq 'GIA' }).Count
-        $fallite = @($esiti | Where-Object { -not $_.Ok } | ForEach-Object { $_.Account })
-        $script:Ultima = [pscustomobject]@{ Destinazioni = $destinazioni; Domini = $domini; DaScrivere = $daScrivere }
-        $ui.BtnScrivi.IsEnabled = ($daScrivere.Count -gt 0)
-        $testo = "Anteprima: $nuovi nuovi, $presenti già presenti, su $($esiti.Count) account. Non è stato scritto nulla."
-        if ($fallite) { $testo += ' Non raggiungibili: ' + ($fallite -join ', ') + '.' }
-        Set-Stato ($testo + $avviso)
+        Show-EsitoAnteprima $r $ctx
     }.GetNewClosure()
 })
 
@@ -200,27 +235,13 @@ $ui.BtnScrivi.Add_Click({
     Set-Stato ('Scrittura in corso su ' + $daAccount.Count + ' account.')
     Start-VaglioLavoro -Tipo 'Scrittura' -Parametri @{ Account = $daAccount; Domini = $u.Domini; Cartella = $cartellaBackup } -AllaFine {
         param($r)
-        Set-Occupato $false
-        if (-not $r.Ok) { Show-Errore $r.Errore $ui.LstAccount; return }
-        $esiti = @($r.Dati)
-        $righe = @($esiti | ForEach-Object {
-            if ($_.Ok) {
-                [pscustomobject]@{ Account = $_.Account; Stato = 'Scritto'; Dominio = "$($_.Esito.Verificati) domini verificati sul server, $($_.Esito.Aggiunti) aggiunti" }
-            } else {
-                [pscustomobject]@{ Account = $_.Account; Stato = 'Errore'; Dominio = $_.Errore }
-            }
-        })
-        $ui.LstEsito.ItemsSource = $righe
-        $script:Ultima = $null
-        $ui.BtnScrivi.IsEnabled = $false
-        $ko = @($esiti | Where-Object { -not $_.Ok })
-        $testo = "Scrittura completata su $($esiti.Count - $ko.Count) di $($esiti.Count) account. Copie locali in: $cartellaBackup. Rifai l'anteprima per aggiornare l'elenco."
-        if ($ko) { $testo += ' Errori: ' + (($ko | ForEach-Object { $_.Account }) -join ', ') + '.' }
-        Set-Stato $testo
+        Show-EsitoScrittura $r
     }.GetNewClosure()
 })
 
 $ui.BtnGestisci.Add_Click({ Open-Gestione })
+
+# ---- Gestione account ----
 
 # Finestra di gestione: elenco in alto, modulo sotto. Ogni salvataggio va subito nel file degli account.
 function Open-Gestione {
@@ -313,8 +334,9 @@ function Open-Gestione {
     Update-Accounts
 }
 
-# Voci della blacklist di un account: lettura, modifica di una voce, eliminazione di una o più voci.
+# ---- Voci della blacklist ----
 # Ogni scrittura copia prima il file e rilegge dopo, come per l'aggiunta.
+
 $ui.BtnBlacklist.Add_Click({ Open-Blacklist })
 
 function Open-Blacklist {
@@ -373,21 +395,27 @@ function Start-BlLista {
     Set-BlStato 'Lettura della blacklist in corso.'
     Start-VaglioLavoro -Tipo 'Lista' -Parametri @{ Account = $script:BlAccount } -AllaFine {
         param($r)
-        Set-BlOccupato $false
-        if (-not $r.Ok) { Show-BlErrore $r.Errore; return }
-        $script:BlVoci = @($r.Dati)
-        $script:B.LstVoci.ItemsSource = @($script:BlVoci | ForEach-Object {
-            [pscustomobject]@{
-                Voce        = $_.Testo
-                Modificabile = if ($_.Modificabile) { 'Sì' } else { 'No' }
-                Testo       = $_.Testo
-                Possibile   = [bool]$_.Modificabile
-            }
-        })
-        $prima = if ($script:BlMsg) { $script:BlMsg + ' ' } else { '' }
-        $script:BlMsg = ''
-        Set-BlStato ($prima + "Voci trovate: $($script:BlVoci.Count).")
+        Show-BlListaEsito $r
     }.GetNewClosure()
+}
+
+function Show-BlListaEsito($r) {
+    Set-BlOccupato $false
+    if (-not $r.Ok) { Show-BlErrore $r.Errore; return }
+    $script:BlVoci = @($r.Dati)
+    $righe = New-Object System.Collections.Generic.List[object]
+    foreach ($v in $script:BlVoci) {
+        $righe.Add([pscustomobject]@{
+            Voce         = [string]$v.Testo
+            Modificabile = $(if ($v.Modificabile) { 'Sì' } else { 'No' })
+            Testo        = [string]$v.Testo
+            Possibile    = [bool]$v.Modificabile
+        })
+    }
+    Set-VaglioElenco ($script:B.LstVoci) $righe
+    $prima = if ($script:BlMsg) { $script:BlMsg + ' ' } else { '' }
+    $script:BlMsg = ''
+    Set-BlStato ($prima + "Voci trovate: $($script:BlVoci.Count).")
 }
 
 function Start-BlElimina {
@@ -401,23 +429,27 @@ function Start-BlElimina {
     Set-BlStato 'Eliminazione in corso.'
     Start-VaglioLavoro -Tipo 'Rimuovi' -Parametri @{ Account = $script:BlAccount; Testi = $sel; Cartella = $cartellaBackup } -AllaFine {
         param($r)
-        Set-BlOccupato $false
-        if (-not $r.Ok) { Show-BlErrore $r.Errore; Start-BlLista; return }
-        $script:BlMsg = "Eliminate $($r.Dati.Rimosse) voci. Copia locale: $($r.Dati.Backup)."
-        Start-BlLista
+        Show-BlEliminaEsito $r
     }.GetNewClosure()
+}
+
+function Show-BlEliminaEsito($r) {
+    Set-BlOccupato $false
+    if (-not $r.Ok) { Show-BlErrore $r.Errore; Start-BlLista; return }
+    $script:BlMsg = "Eliminate $($r.Dati.Rimosse) voci. Copia locale: $($r.Dati.Backup)."
+    Start-BlLista
 }
 
 function Start-BlModifica {
     $voce = @($script:B.LstVoci.SelectedItems | ForEach-Object { $_ })[0]
     if (-not $voce) { return }
     $nuovo = $script:B.TxtBlNuovo.Text.Trim()
-    if (-not (ConvertTo-VaglioDominio $nuovo)) {
+    $norm = ConvertTo-VaglioDominio $nuovo
+    if (-not $norm) {
         Show-BlErrore "«$nuovo» non è un dominio valido."
         [void]$script:B.TxtBlNuovo.Focus()
         return
     }
-    $norm = ConvertTo-VaglioDominio $nuovo
     $testo = "Cambio «$($voce.Testo)» in «blacklist_from *@$norm» sul server di $($script:BlAccount.Nome).`nPrima copio il file user_prefs."
     $scelta = [System.Windows.MessageBox]::Show($script:BlWin, $testo, 'Confermi la modifica?', 'YesNo', 'Question', 'No')
     if ($scelta -ne 'Yes') { Set-BlStato 'Modifica annullata. Non è stato cambiato nulla.'; return }
@@ -426,12 +458,16 @@ function Start-BlModifica {
     Set-BlStato 'Modifica in corso.'
     Start-VaglioLavoro -Tipo 'Modifica' -Parametri @{ Account = $script:BlAccount; Testo = $voce.Testo; Nuovo = $nuovo; Cartella = $cartellaBackup } -AllaFine {
         param($r)
-        Set-BlOccupato $false
-        if (-not $r.Ok) { Show-BlErrore $r.Errore; Start-BlLista; return }
-        $script:BlMsg = "Voce modificata in «$($r.Dati.Nuova)». Copia locale: $($r.Dati.Backup)."
-        $script:B.TxtBlNuovo.Text = ''
-        Start-BlLista
+        Show-BlModificaEsito $r
     }.GetNewClosure()
+}
+
+function Show-BlModificaEsito($r) {
+    Set-BlOccupato $false
+    if (-not $r.Ok) { Show-BlErrore $r.Errore; Start-BlLista; return }
+    $script:BlMsg = "Voce modificata in «$($r.Dati.Nuova)». Copia locale: $($r.Dati.Backup)."
+    $script:B.TxtBlNuovo.Text = ''
+    Start-BlLista
 }
 
 $ui.BtnChiudi.Add_Click({ $win.Close() })
