@@ -13,6 +13,8 @@ $script:PaletteChiaro = @{
     Focus  = '#1C1B18'   # anello del focus da tastiera
     Ok     = '#1F5C4A'
     Err    = '#9B2318'
+    Sel    = '#CFE3DB'   # sfondo della riga selezionata
+    SelFg  = '#1C1B18'   # testo della riga selezionata
 }
 
 $script:PaletteScuro = @{
@@ -26,6 +28,8 @@ $script:PaletteScuro = @{
     Focus  = '#ECEBE4'
     Ok     = '#8FD1B4'
     Err    = '#FF9A8A'
+    Sel    = '#2E4A40'
+    SelFg  = '#ECEBE4'
 }
 
 function Get-VaglioTema {

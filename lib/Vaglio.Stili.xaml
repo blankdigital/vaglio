@@ -9,6 +9,8 @@
     <SolidColorBrush x:Key="Focus" Color="__Focus__"/>
     <SolidColorBrush x:Key="Ok" Color="__Ok__"/>
     <SolidColorBrush x:Key="Err" Color="__Err__"/>
+    <SolidColorBrush x:Key="Sel" Color="__Sel__"/>
+    <SolidColorBrush x:Key="SelFg" Color="__SelFg__"/>
 
     <Style TargetType="GridViewColumnHeader">
       <Setter Property="Background" Value="{StaticResource Bg}"/>
@@ -18,6 +20,20 @@
       <Setter Property="HorizontalContentAlignment" Value="Left"/>
       <Setter Property="Padding" Value="10,6"/>
       <Setter Property="FontWeight" Value="SemiBold"/>
+    </Style>
+
+    <!-- Riga selezionata: testo sempre leggibile, anche con il tema scuro. -->
+    <Style TargetType="ListViewItem">
+      <Setter Property="Foreground" Value="{StaticResource Fg}"/>
+      <Setter Property="Background" Value="Transparent"/>
+      <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+      <Setter Property="Padding" Value="4,3"/>
+      <Style.Triggers>
+        <Trigger Property="IsSelected" Value="True">
+          <Setter Property="Background" Value="{StaticResource Sel}"/>
+          <Setter Property="Foreground" Value="{StaticResource SelFg}"/>
+        </Trigger>
+      </Style.Triggers>
     </Style>
 
     <Style TargetType="Label">

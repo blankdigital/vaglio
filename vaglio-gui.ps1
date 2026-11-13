@@ -36,6 +36,15 @@ function Set-VaglioElenco($controllo, $voci) {
     foreach ($v in $voci) { [void]$controllo.Items.Add($v) }
 }
 
+# Una colonna occupa lo spazio che resta nella tabella: evita la colonna vuota a destra.
+function Set-VaglioColonne($lv, [int]$indiceRiempi) {
+    $colonne = @($lv.View.Columns)
+    $altre = 0
+    for ($i = 0; $i -lt $colonne.Count; $i++) { if ($i -ne $indiceRiempi) { $altre += $colonne[$i].Width } }
+    $largo = $lv.ActualWidth - $altre - 28
+    if ($largo -gt 120) { $colonne[$indiceRiempi].Width = $largo }
+}
+
 function Get-Controlli($finestra, [string[]]$nomi) {
     $mappa = @{}
     foreach ($n in $nomi) { $mappa[$n] = $finestra.FindName($n) }
@@ -48,6 +57,7 @@ $ui = Get-Controlli $win @('LstAccount', 'TxtAccountVuoto', 'BtnGestisci', 'RbUn
 
 $cartellaBackup = Join-Path $HOME 'Vaglio-backup'
 $ui.TxtBackup.Text = "Copie di sicurezza in: $cartellaBackup"
+$ui.LstEsito.Add_SizeChanged({ param($s, $e) Set-VaglioColonne $s 2 })
 
 # Stato della sessione. Cambiare account, destinazione o domini invalida l'anteprima.
 $script:Ultima = $null
@@ -353,6 +363,7 @@ function Open-Blacklist {
     $script:BlMsg = ''
     $script:BlOccupato = $false
     $script:B.LstVoci.Add_SelectionChanged({ Set-BlSelezione })
+    $script:B.LstVoci.Add_SizeChanged({ param($s, $e) Set-VaglioColonne $s 0 })
     $script:B.BtnBlRicarica.Add_Click({ Start-BlLista })
     $script:B.BtnBlElimina.Add_Click({ Start-BlElimina })
     $script:B.BtnBlModifica.Add_Click({ Start-BlModifica })
