@@ -11,6 +11,7 @@
     <SolidColorBrush x:Key="Err" Color="__Err__"/>
     <SolidColorBrush x:Key="Sel" Color="__Sel__"/>
     <SolidColorBrush x:Key="SelFg" Color="__SelFg__"/>
+    <SolidColorBrush x:Key="Hov" Color="__Hov__"/>
 
     <Style TargetType="GridViewColumnHeader">
       <Setter Property="Background" Value="{StaticResource Bg}"/>
@@ -28,7 +29,23 @@
       <Setter Property="Background" Value="Transparent"/>
       <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
       <Setter Property="Padding" Value="4,3"/>
+      <!-- Modello minimo: il default di Windows colora l'hover da solo e ignora Background. -->
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="ListViewItem">
+            <Border x:Name="Riga" Background="{TemplateBinding Background}" SnapsToDevicePixels="True">
+              <GridViewRowPresenter Content="{TemplateBinding Content}" Margin="{TemplateBinding Padding}"
+                                    Columns="{Binding (GridView.ColumnCollection), RelativeSource={RelativeSource TemplatedParent}}"/>
+            </Border>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
       <Style.Triggers>
+        <!-- Sotto il mouse: prima della selezione, così una riga selezionata mantiene il suo colore. -->
+        <Trigger Property="IsMouseOver" Value="True">
+          <Setter Property="Background" Value="{StaticResource Hov}"/>
+          <Setter Property="Foreground" Value="{StaticResource Fg}"/>
+        </Trigger>
         <Trigger Property="IsSelected" Value="True">
           <Setter Property="Background" Value="{StaticResource Sel}"/>
           <Setter Property="Foreground" Value="{StaticResource SelFg}"/>

@@ -42,7 +42,7 @@ foreach ($tema in 'chiaro', 'scuro') {
     Write-Host "Contrasti tema $tema"
     $p = Get-VaglioPalette -Tema $tema
     # Testo su sfondo: almeno 4,5:1 (WCAG 1.4.3)
-    foreach ($coppia in @(@('Fg', 'Bg'), @('Fg', 'Surf'), @('Muted', 'Bg'), @('Muted', 'Surf'), @('OnAcc', 'Acc'), @('Err', 'Bg'), @('Ok', 'Bg'), @('SelFg', 'Sel'))) {
+    foreach ($coppia in @(@('Fg', 'Bg'), @('Fg', 'Surf'), @('Muted', 'Bg'), @('Muted', 'Surf'), @('OnAcc', 'Acc'), @('Err', 'Bg'), @('Ok', 'Bg'), @('SelFg', 'Sel'), @('Fg', 'Hov'))) {
         $c = Get-Contrasto $p[$coppia[0]] $p[$coppia[1]]
         Assert-Vero ($c -ge 4.5) "$($coppia[0]) su $($coppia[1]): $c (min 4,5)"
     }

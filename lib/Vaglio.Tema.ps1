@@ -15,6 +15,7 @@ $script:PaletteChiaro = @{
     Err    = '#9B2318'
     Sel    = '#CFE3DB'   # sfondo della riga selezionata
     SelFg  = '#1C1B18'   # testo della riga selezionata
+    Hov    = '#E4EEEA'   # sfondo della riga sotto il mouse
 }
 
 $script:PaletteScuro = @{
@@ -30,6 +31,7 @@ $script:PaletteScuro = @{
     Err    = '#FF9A8A'
     Sel    = '#2E4A40'
     SelFg  = '#ECEBE4'
+    Hov    = '#26332E'
 }
 
 function Get-VaglioTema {
