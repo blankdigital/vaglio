@@ -35,7 +35,7 @@ function Get-Controlli($finestra, [string[]]$nomi) {
 
 $win = New-VaglioFinestra 'Vaglio.xaml'
 $ui = Get-Controlli $win @('LstAccount', 'TxtAccountVuoto', 'BtnGestisci', 'RbUno', 'RbAlcuni', 'RbTutti',
-    'TxtDestinazione', 'TxtDomini', 'BtnAnteprima', 'BtnScrivi', 'TxtErrore', 'LstEsito', 'TxtStato', 'TxtBackup', 'BtnChiudi')
+    'TxtDestinazione', 'TxtDomini', 'BtnAnteprima', 'BtnScrivi', 'TxtErrore', 'LstEsito', 'TxtStato', 'TxtBackup', 'BtnChiudi', 'BtnBlacklist')
 
 $cartellaBackup = Join-Path $HOME 'Vaglio-backup'
 $ui.TxtBackup.Text = "Copie di sicurezza in: $cartellaBackup"
@@ -123,7 +123,12 @@ function Start-VaglioLavoro {
         param($core, $tipo, $p)
         try {
             . $core
-            @{ Ok = $true; Dati = @(Invoke-VaglioSuAccount -Tipo $tipo -Account $p.Account -Domini $p.Domini -CartellaBackup $p.Cartella) }
+            switch ($tipo) {
+                'Lista'    { @{ Ok = $true; Dati = @(Get-VaglioVoci -Account $p.Account) } }
+                'Rimuovi'  { @{ Ok = $true; Dati = (Invoke-VaglioRimuoviVoci -Account $p.Account -Testi $p.Testi -CartellaBackup $p.Cartella) } }
+                'Modifica' { @{ Ok = $true; Dati = (Invoke-VaglioModificaVoce -Account $p.Account -Testo $p.Testo -NuovoDominio $p.Nuovo -CartellaBackup $p.Cartella) } }
+                default    { @{ Ok = $true; Dati = @(Invoke-VaglioSuAccount -Tipo $tipo -Account $p.Account -Domini $p.Domini -CartellaBackup $p.Cartella) } }
+            }
         } catch {
             @{ Ok = $false; Errore = $_.Exception.Message }
         }
@@ -306,6 +311,127 @@ function Open-Gestione {
     Gest-Ricarica $null
     [void]$script:GestWin.ShowDialog()
     Update-Accounts
+}
+
+# Voci della blacklist di un account: lettura, modifica di una voce, eliminazione di una o più voci.
+# Ogni scrittura copia prima il file e rilegge dopo, come per l'aggiunta.
+$ui.BtnBlacklist.Add_Click({ Open-Blacklist })
+
+function Open-Blacklist {
+    $sel = @($ui.LstAccount.SelectedItems | ForEach-Object { $_ })
+    if ($sel.Count -ne 1) { Show-Errore 'Seleziona un solo account per vedere la sua blacklist.' $ui.LstAccount; return }
+    $script:BlAccount = $sel[0]
+    $script:BlWin = New-VaglioFinestra 'Vaglio.Blacklist.xaml'
+    $script:BlWin.Owner = $win
+    $script:BlWin.Title = "Blacklist di $($script:BlAccount.Nome) - Vaglio"
+    $script:B = Get-Controlli $script:BlWin @('TxtBlTitolo', 'LstVoci', 'TxtBlNuovo', 'BtnBlRicarica', 'BtnBlModifica',
+        'BtnBlElimina', 'TxtBlErrore', 'TxtBlStato', 'BtnBlChiudi')
+    $script:B.TxtBlTitolo.Text = "Blacklist di $($script:BlAccount.Nome)"
+    $script:BlVoci = @()
+    $script:BlMsg = ''
+    $script:BlOccupato = $false
+    $script:B.LstVoci.Add_SelectionChanged({ Update-BlPulsanti })
+    $script:B.BtnBlRicarica.Add_Click({ Start-BlLista })
+    $script:B.BtnBlElimina.Add_Click({ Start-BlElimina })
+    $script:B.BtnBlModifica.Add_Click({ Start-BlModifica })
+    $script:B.BtnBlChiudi.Add_Click({ $script:BlWin.Close() })
+    Start-BlLista
+    [void]$script:BlWin.ShowDialog()
+}
+
+function Set-BlStato([string]$testo) { $script:B.TxtBlStato.Text = $testo }
+
+function Show-BlErrore([string]$testo) {
+    $script:B.TxtBlErrore.Text = $testo
+    $script:B.TxtBlErrore.Visibility = 'Visible'
+    Set-BlStato ('Errore: ' + $testo)
+}
+
+function Hide-BlErrore {
+    $script:B.TxtBlErrore.Text = ''
+    $script:B.TxtBlErrore.Visibility = 'Collapsed'
+}
+
+function Set-BlOccupato([bool]$on) {
+    $script:BlOccupato = $on
+    foreach ($c in @($script:B.BtnBlRicarica, $script:B.LstVoci, $script:B.BtnBlChiudi, $script:B.TxtBlNuovo)) { $c.IsEnabled = -not $on }
+    if ($on) { $script:B.BtnBlModifica.IsEnabled = $false; $script:B.BtnBlElimina.IsEnabled = $false } else { Update-BlPulsanti }
+    $script:BlWin.Cursor = if ($on) { [System.Windows.Input.Cursors]::Wait } else { $null }
+}
+
+# Elimina attivo con almeno una voce selezionata; Modifica solo con una voce modificabile.
+function Update-BlPulsanti {
+    if ($script:BlOccupato) { return }
+    $sel = @($script:B.LstVoci.SelectedItems | ForEach-Object { $_ })
+    $script:B.BtnBlElimina.IsEnabled = ($sel.Count -gt 0)
+    $script:B.BtnBlModifica.IsEnabled = ($sel.Count -eq 1) -and [bool]$sel[0].Possibile
+}
+
+function Start-BlLista {
+    Hide-BlErrore
+    Set-BlOccupato $true
+    Set-BlStato 'Lettura della blacklist in corso.'
+    Start-VaglioLavoro -Tipo 'Lista' -Parametri @{ Account = $script:BlAccount } -AllaFine {
+        param($r)
+        Set-BlOccupato $false
+        if (-not $r.Ok) { Show-BlErrore $r.Errore; return }
+        $script:BlVoci = @($r.Dati)
+        $script:B.LstVoci.ItemsSource = @($script:BlVoci | ForEach-Object {
+            [pscustomobject]@{
+                Voce        = $_.Testo
+                Modificabile = if ($_.Modificabile) { 'Sì' } else { 'No' }
+                Testo       = $_.Testo
+                Possibile   = [bool]$_.Modificabile
+            }
+        })
+        $prima = if ($script:BlMsg) { $script:BlMsg + ' ' } else { '' }
+        $script:BlMsg = ''
+        Set-BlStato ($prima + "Voci trovate: $($script:BlVoci.Count).")
+    }.GetNewClosure()
+}
+
+function Start-BlElimina {
+    $sel = @($script:B.LstVoci.SelectedItems | ForEach-Object { $_.Testo })
+    if (-not $sel) { return }
+    $testo = "Elimino $($sel.Count) voci dalla blacklist di $($script:BlAccount.Nome).`nPrima copio il file user_prefs, in locale e sul server."
+    $scelta = [System.Windows.MessageBox]::Show($script:BlWin, $testo, 'Confermi l''eliminazione?', 'YesNo', 'Question', 'No')
+    if ($scelta -ne 'Yes') { Set-BlStato 'Eliminazione annullata. Non è stato cambiato nulla.'; return }
+    Hide-BlErrore
+    Set-BlOccupato $true
+    Set-BlStato 'Eliminazione in corso.'
+    Start-VaglioLavoro -Tipo 'Rimuovi' -Parametri @{ Account = $script:BlAccount; Testi = $sel; Cartella = $cartellaBackup } -AllaFine {
+        param($r)
+        Set-BlOccupato $false
+        if (-not $r.Ok) { Show-BlErrore $r.Errore; Start-BlLista; return }
+        $script:BlMsg = "Eliminate $($r.Dati.Rimosse) voci. Copia locale: $($r.Dati.Backup)."
+        Start-BlLista
+    }.GetNewClosure()
+}
+
+function Start-BlModifica {
+    $voce = @($script:B.LstVoci.SelectedItems | ForEach-Object { $_ })[0]
+    if (-not $voce) { return }
+    $nuovo = $script:B.TxtBlNuovo.Text.Trim()
+    if (-not (ConvertTo-VaglioDominio $nuovo)) {
+        Show-BlErrore "«$nuovo» non è un dominio valido."
+        [void]$script:B.TxtBlNuovo.Focus()
+        return
+    }
+    $norm = ConvertTo-VaglioDominio $nuovo
+    $testo = "Cambio «$($voce.Testo)» in «blacklist_from *@$norm» sul server di $($script:BlAccount.Nome).`nPrima copio il file user_prefs."
+    $scelta = [System.Windows.MessageBox]::Show($script:BlWin, $testo, 'Confermi la modifica?', 'YesNo', 'Question', 'No')
+    if ($scelta -ne 'Yes') { Set-BlStato 'Modifica annullata. Non è stato cambiato nulla.'; return }
+    Hide-BlErrore
+    Set-BlOccupato $true
+    Set-BlStato 'Modifica in corso.'
+    Start-VaglioLavoro -Tipo 'Modifica' -Parametri @{ Account = $script:BlAccount; Testo = $voce.Testo; Nuovo = $nuovo; Cartella = $cartellaBackup } -AllaFine {
+        param($r)
+        Set-BlOccupato $false
+        if (-not $r.Ok) { Show-BlErrore $r.Errore; Start-BlLista; return }
+        $script:BlMsg = "Voce modificata in «$($r.Dati.Nuova)». Copia locale: $($r.Dati.Backup)."
+        $script:B.TxtBlNuovo.Text = ''
+        Start-BlLista
+    }.GetNewClosure()
 }
 
 $ui.BtnChiudi.Add_Click({ $win.Close() })

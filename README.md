@@ -64,6 +64,28 @@ Un account che non risponde non blocca gli altri: il suo errore compare nell'esi
 
 Tasti: `Alt` con la lettera sottolineata attiva il campo o il pulsante. `Invio` avvia l'anteprima. `Esc` chiude la finestra.
 
+## Voci già in blacklist
+
+Dalla finestra, **Voci della blacklist…** apre le voci `blacklist_from` del server dell'account selezionato. Da lì puoi:
+
+- **leggere** tutte le voci del file;
+- **eliminare** una o più voci selezionate, con conferma;
+- **modificare** una voce nella forma `*@dominio`, cambiandone il dominio.
+
+Le voci in altra forma, per esempio un indirizzo singolo, si vedono ma non si modificano.
+
+Ogni eliminazione o modifica copia prima il file in locale e sul server, poi rilegge il file per verificare il risultato.
+
+Dalla riga di comando, senza `-Apply` si vede solo cosa cambierebbe:
+
+```powershell
+.\vaglio.ps1 -Account sito-cliente-a -Lista
+.\vaglio.ps1 -Account sito-cliente-a -Elimina -Domain spam.com -Apply
+.\vaglio.ps1 -Account sito-cliente-a -Modifica -Domain vecchio.com -NuovoDominio nuovo.org -Apply
+```
+
+La gestione della whitelist non c'è ancora: arriverà in un aggiornamento successivo.
+
 ## Riga di comando
 
 Anteprima su due account:

@@ -1,4 +1,4 @@
-# Genera assets/vaglio.ico: una V bianca su fondo verde bosco, colore d'accento di Vaglio.
+﻿# Genera assets/vaglio.ico: una V bianca su fondo verde bosco, colore d'accento di Vaglio.
 # Uso: powershell -NoProfile -ExecutionPolicy Bypass -File scripts\make-icon.ps1
 Add-Type -AssemblyName System.Drawing
 

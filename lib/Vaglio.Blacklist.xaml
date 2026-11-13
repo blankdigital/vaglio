@@ -1,0 +1,63 @@
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Name="Blacklist"
+        Title="Blacklist - Vaglio"
+        Width="740" Height="640" MinWidth="520" MinHeight="460"
+        Background="__Bg__" Foreground="__Fg__"
+        FontFamily="Segoe UI" FontSize="15"
+        Language="it-IT"
+        WindowStartupLocation="CenterOwner"
+        TextOptions.TextFormattingMode="Display"
+        UseLayoutRounding="True">
+
+  <Window.Resources>
+    __STILI__
+  </Window.Resources>
+
+  <ScrollViewer VerticalScrollBarVisibility="Auto">
+    <StackPanel Margin="28,24,28,22">
+
+      <TextBlock x:Name="TxtBlTitolo" Text="Blacklist" FontSize="24" FontWeight="SemiBold" Foreground="{StaticResource Fg}"/>
+      <TextBlock Style="{StaticResource Aiuto}" FontSize="16" Margin="0,4,0,22"
+                 Text="Voci blacklist_from del server. Puoi eliminarne una o più, oppure cambiare il dominio di una voce nella forma *@dominio."/>
+
+      <Label x:Name="EtVoci" Content="_Voci" Target="{Binding ElementName=LstVoci}"/>
+      <ListView x:Name="LstVoci" MinHeight="200" Background="{StaticResource Surf}"
+                Foreground="{StaticResource Fg}" BorderBrush="{StaticResource Border}" BorderThickness="1"
+                SelectionMode="Extended"
+                AutomationProperties.Name="Voci della blacklist"
+                ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+        <ListView.View>
+          <GridView>
+            <GridViewColumn Header="Voce" Width="420" DisplayMemberBinding="{Binding Voce}"/>
+            <GridViewColumn Header="Modificabile" Width="130" DisplayMemberBinding="{Binding Modificabile}"/>
+          </GridView>
+        </ListView.View>
+      </ListView>
+
+      <Button x:Name="BtnBlRicarica" Content="_Ricarica" Style="{StaticResource Secondario}"
+              HorizontalAlignment="Left" Margin="0,12,0,0"/>
+
+      <Label Content="Modifica voce selezionata" Margin="0,24,0,6"/>
+      <Label Content="_Nuovo dominio" Target="{Binding ElementName=TxtBlNuovo}"/>
+      <TextBox x:Name="TxtBlNuovo"
+               AutomationProperties.HelpText="Seleziona una sola voce modificabile, poi scrivi il nuovo dominio. Esempio: spam.com."/>
+      <TextBlock Style="{StaticResource Aiuto}" Text="Si modifica una sola voce alla volta, e solo se è nella forma *@dominio."/>
+
+      <TextBlock x:Name="TxtBlErrore" Visibility="Collapsed" Foreground="{StaticResource Err}"
+                 FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,18,0,0"
+                 AutomationProperties.LiveSetting="Assertive"/>
+      <TextBlock x:Name="TxtBlStato" Margin="0,14,0,0" TextWrapping="Wrap"
+                 Foreground="{StaticResource Fg}" AutomationProperties.LiveSetting="Polite"/>
+
+      <StackPanel Orientation="Horizontal" Margin="0,22,0,0">
+        <Button x:Name="BtnBlModifica" Content="_Modifica" Style="{StaticResource Primario}" IsEnabled="False"/>
+        <Button x:Name="BtnBlElimina" Content="_Elimina selezionate" Style="{StaticResource Secondario}" IsEnabled="False"
+                AutomationProperties.HelpText="Elimina le voci selezionate dal file del server. Chiede conferma e copia prima il file."/>
+      </StackPanel>
+
+      <Button x:Name="BtnBlChiudi" Content="_Chiudi" Style="{StaticResource Secondario}" IsCancel="True"
+              HorizontalAlignment="Right" Margin="0,24,0,0"/>
+    </StackPanel>
+  </ScrollViewer>
+</Window>

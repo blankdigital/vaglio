@@ -55,7 +55,7 @@ foreach ($tema in 'chiaro', 'scuro') {
 
 Write-Host 'Palette e XAML'
 $stiliXaml = Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $PSScriptRoot '..\lib\Vaglio.Stili.xaml')
-$finestre = 'Vaglio.xaml', 'Vaglio.Gestione.xaml'
+$finestre = 'Vaglio.xaml', 'Vaglio.Gestione.xaml', 'Vaglio.Blacklist.xaml'
 $tuttiToken = @()
 foreach ($file in $finestre) {
     $xaml = Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $PSScriptRoot "..\lib\$file")
@@ -78,7 +78,8 @@ foreach ($tema in 'chiaro', 'scuro') {
         Assert-Vero $ok "$file ($tema) si legge come WPF$(if (-not $ok) { ': ' + $errore })"
         if ($ok) {
             Assert-Vero ($finestra.Language.IetfLanguageTag -eq 'it-IT') "$file ($tema) lingua it-IT"
-            Assert-Vero ($null -ne $finestra.FindName('LstAccount') -or $null -ne $finestra.FindName('LstGest')) "$file ($tema) ha l'elenco account"
+            $haElenco = ($null -ne $finestra.FindName('LstAccount')) -or ($null -ne $finestra.FindName('LstGest')) -or ($null -ne $finestra.FindName('LstVoci'))
+            Assert-Vero $haElenco "$file ($tema) ha un elenco"
         }
     }
 }

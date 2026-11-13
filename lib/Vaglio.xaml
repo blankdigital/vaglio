@@ -37,8 +37,11 @@
       </ListBox>
       <TextBlock x:Name="TxtAccountVuoto" Style="{StaticResource Aiuto}" Visibility="Collapsed"
                  Text="Nessun account salvato. Premi Gestisci account per aggiungerne uno."/>
-      <Button x:Name="BtnGestisci" Content="_Gestisci account…" Style="{StaticResource Secondario}"
-              HorizontalAlignment="Left" Margin="0,12,0,0"/>
+      <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+        <Button x:Name="BtnGestisci" Content="_Gestisci account…" Style="{StaticResource Secondario}"/>
+        <Button x:Name="BtnBlacklist" Content="_Voci della blacklist…" Style="{StaticResource Secondario}"
+                AutomationProperties.HelpText="Apre le voci già presenti sul server dell'account selezionato: lettura, modifica, eliminazione."/>
+      </StackPanel>
 
       <!-- Dove bloccare -->
       <Label Content="Dove bloccare" Margin="0,26,0,6"/>

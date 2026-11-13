@@ -42,6 +42,11 @@ param(
     [switch]$Elenca,
     [switch]$Salva,
     [switch]$Rimuovi,
+    # Voci della blacklist: lettura, eliminazione e modifica per dominio.
+    [switch]$Lista,
+    [switch]$Elimina,
+    [switch]$Modifica,
+    [string]$NuovoDominio,
     [string]$Nome,
     # Cartella locale per le copie prima di scrivere. Dentro c'è una sottocartella per account.
     [string]$BackupDir = (Join-Path $HOME 'Vaglio-backup')
@@ -68,6 +73,44 @@ if ($Rimuovi) {
     Remove-VaglioAccount -Nome $Nome
     Write-Host "Account rimosso: $Nome (il server e le sue copie non sono stati toccati)."
     return
+}
+
+# Voci della blacklist di un account: lettura, eliminazione e modifica. Senza -Apply solo anteprima.
+if ($Lista -or $Elimina -or $Modifica) {
+    if (-not $Account -or $Account.Count -ne 1) { throw 'Per le voci della blacklist serve un solo account: -Account <nome>.' }
+    $acc = @(Select-VaglioAccounts -Nomi $Account)[0]
+
+    if ($Lista) {
+        Get-VaglioVoci -Account $acc | Select-Object Testo, Dominio, Modificabile
+        return
+    }
+
+    if ($Elimina) {
+        if (-not $Domain) { throw '-Elimina richiede -Domain.' }
+        $domini = (Get-VaglioDomini $Domain).Validi
+        $voci = @(Get-VaglioVoci -Account $acc | Where-Object { $_.Modificabile -and $domini -contains $_.Dominio })
+        if (-not $voci) { Write-Host 'Nessuna voce trovata per questi domini.'; return }
+        $voci | Select-Object Testo | Out-Host
+        if (-not $Apply) { Write-Host 'Anteprima: nessuna modifica. Rilancia con -Apply per eliminare.'; return }
+        $esito = Invoke-VaglioRimuoviVoci -Account $acc -Testi @($voci.Testo) -CartellaBackup $BackupDir
+        Write-Host "[$($acc.Nome)] eliminate $($esito.Rimosse) voci. Copia: $($esito.Backup)"
+        return
+    }
+
+    if ($Modifica) {
+        if (-not $Domain -or -not $NuovoDominio) { throw '-Modifica richiede -Domain (dominio attuale) e -NuovoDominio.' }
+        $vecchi = @((Get-VaglioDomini $Domain).Validi)
+        if ($vecchi.Count -ne 1) { throw '-Modifica accetta un solo dominio attuale.' }
+        $voce = Get-VaglioVoci -Account $acc | Where-Object { $_.Modificabile -and $_.Dominio -eq $vecchi[0] } | Select-Object -First 1
+        if (-not $voce) { throw "Nessuna voce per $($vecchi[0])." }
+        $nuovoNorm = ConvertTo-VaglioDominio $NuovoDominio
+        if (-not $nuovoNorm) { throw "«$NuovoDominio» non è un dominio valido." }
+        Write-Host "«$($voce.Testo)» diventerebbe «blacklist_from *@$nuovoNorm»."
+        if (-not $Apply) { Write-Host 'Anteprima: nessuna modifica. Rilancia con -Apply per modificare.'; return }
+        $esito = Invoke-VaglioModificaVoce -Account $acc -Testo $voce.Testo -NuovoDominio $NuovoDominio -CartellaBackup $BackupDir
+        Write-Host "[$($acc.Nome)] voce modificata. Copia: $($esito.Backup)"
+        return
+    }
 }
 
 # Destinazioni: account salvati scelti per nome o tutti, oppure un server ad hoc.

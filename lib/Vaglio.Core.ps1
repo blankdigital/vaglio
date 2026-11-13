@@ -51,12 +51,15 @@ function Invoke-VaglioRemoto {
     param(
         [Parameter(Mandatory)][string]$Server,
         [Parameter(Mandatory)][string]$Prefs,
-        [Parameter(Mandatory)][ValidateSet('ANTEPRIMA', 'APPLICA', 'VERIFICA')][string]$Modo,
-        [string[]]$Domini = @()
+        [Parameter(Mandatory)][ValidateSet('ANTEPRIMA', 'APPLICA', 'VERIFICA', 'LISTA', 'RIMUOVI', 'MODIFICA')][string]$Modo,
+        [string[]]$Domini = @(),
+        # Argomenti già codificati (base64) per RIMUOVI e MODIFICA.
+        [string[]]$Argomenti = @()
     )
     $remoto = (Get-Content -Raw -LiteralPath $script:RemotoPath) -replace "`r", ''
     $b64 = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($remoto))
-    $argDomini = if ($Domini) { $Domini -join ' ' } else { '' }
+    $coda = @(@($Domini) + @($Argomenti) | Where-Object { $_ })
+    $argDomini = $coda -join ' '
     $cmd = "echo $b64 | base64 -d | bash -s -- '$Prefs' $Modo $argDomini"
     $righe = @(ssh $Server $cmd 2>&1 | ForEach-Object { "$_" })
     if ($LASTEXITCODE -ne 0) { throw ('SSH non è riuscito: ' + ($righe -join ' ')) }
@@ -155,6 +158,73 @@ function ConvertTo-VaglioRighePiatte {
             [pscustomobject]@{ Account = $e.Account; Stato = $r.Stato; Dominio = $r.Dominio; Tipo = $r.Tipo }
         }
     }
+}
+
+function Get-VaglioCopiaLocale {
+    # Copia locale di user_prefs, in una sottocartella per account. Se fallisce non si scrive nulla.
+    param([Parameter(Mandatory)][pscustomobject]$Account, [Parameter(Mandatory)][string]$CartellaBackup)
+    $cartella = Join-Path $CartellaBackup $Account.Nome
+    New-Item -ItemType Directory -Force -Path $cartella | Out-Null
+    $copia = Join-Path $cartella ('prefs-' + (Get-Date -Format 'yyyyMMdd-HHmmss'))
+    $esito = & scp "$($Account.Server):$($Account.Prefs)" $copia 2>&1
+    if ($LASTEXITCODE -ne 0) { throw "Copia locale fallita, nessuna modifica fatta. $esito" }
+    $copia
+}
+
+function ConvertTo-VaglioBase64([string]$testo) {
+    [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($testo))
+}
+
+function Get-VaglioVoci {
+    # Voci blacklist_from del server. Modificabili solo quelle nella forma *@dominio.
+    param([Parameter(Mandatory)][pscustomobject]$Account)
+    $righe = @(Invoke-VaglioRemoto -Server $Account.Server -Prefs $Account.Prefs -Modo LISTA)
+    foreach ($r in $righe) {
+        if ($r -match '^LINEA (\S+)$') {
+            $testo = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($Matches[1]))
+            $modificabile = [bool]($testo -match '^blacklist_from\s+\*@[a-z0-9.-]+$')
+            $dominio = if ($modificabile) { $testo -replace '^blacklist_from\s+\*@', '' } else { $null }
+            [pscustomobject]@{ Testo = $testo; Dominio = $dominio; Modificabile = $modificabile }
+        } elseif ($r -match '^ERRORE') {
+            throw ($r -replace '^ERRORE\s*', '')
+        }
+    }
+}
+
+function Invoke-VaglioRimuoviVoci {
+    # Elimina le voci indicate per testo esatto. Copia locale prima, rilettura dopo.
+    param([Parameter(Mandatory)][pscustomobject]$Account, [Parameter(Mandatory)][string[]]$Testi, [Parameter(Mandatory)][string]$CartellaBackup)
+    $copia = Get-VaglioCopiaLocale -Account $Account -CartellaBackup $CartellaBackup
+    $argomenti = @($Testi | ForEach-Object { ConvertTo-VaglioBase64 $_ })
+    $esito = @(Invoke-VaglioRemoto -Server $Account.Server -Prefs $Account.Prefs -Modo RIMUOVI -Argomenti $argomenti)
+    $rimosse = 0
+    foreach ($r in $esito) { if ($r -match '^RIMOSSE (\d+)$') { $rimosse = [int]$Matches[1] } }
+    $residue = @(Get-VaglioVoci -Account $Account | Where-Object { $Testi -contains $_.Testo })
+    if ($residue) { throw ('Verifica fallita, ancora presenti: ' + (($residue | ForEach-Object { $_.Testo }) -join '; ')) }
+    [pscustomobject]@{ Backup = $copia; Rimosse = $rimosse }
+}
+
+function Invoke-VaglioModificaVoce {
+    # Cambia il dominio di una voce *@dominio. Copia locale prima, rilettura dopo.
+    param(
+        [Parameter(Mandatory)][pscustomobject]$Account,
+        [Parameter(Mandatory)][string]$Testo,
+        [Parameter(Mandatory)][string]$NuovoDominio,
+        [Parameter(Mandatory)][string]$CartellaBackup
+    )
+    $dominio = ConvertTo-VaglioDominio $NuovoDominio
+    if (-not $dominio) { throw "«$NuovoDominio» non è un dominio valido." }
+    $nuovo = "blacklist_from *@$dominio"
+    if ($nuovo -eq $Testo) { throw 'Il dominio è già quello.' }
+    $copia = Get-VaglioCopiaLocale -Account $Account -CartellaBackup $CartellaBackup
+    $argomenti = @((ConvertTo-VaglioBase64 $Testo), (ConvertTo-VaglioBase64 $nuovo))
+    $esito = @(Invoke-VaglioRemoto -Server $Account.Server -Prefs $Account.Prefs -Modo MODIFICA -Argomenti $argomenti)
+    $modificate = 0
+    foreach ($r in $esito) { if ($r -match '^MODIFICATE (\d+)$') { $modificate = [int]$Matches[1] } }
+    if ($modificate -eq 0) { throw 'Voce non trovata sul server: nessuna modifica fatta.' }
+    $testi = @(Get-VaglioVoci -Account $Account | ForEach-Object { $_.Testo })
+    if ($testi -notcontains $nuovo) { throw 'Verifica fallita: la voce nuova non risulta sul server.' }
+    [pscustomobject]@{ Backup = $copia; Modificate = $modificate; Nuova = $nuovo }
 }
 
 Test-VaglioNormalizzazione
