@@ -1,0 +1,127 @@
+    <!-- Stili condivisi di Vaglio. Inseriti da vaglio-gui.ps1 al posto di __STILI__ in ogni finestra. -->
+    <SolidColorBrush x:Key="Bg" Color="__Bg__"/>
+    <SolidColorBrush x:Key="Surf" Color="__Surf__"/>
+    <SolidColorBrush x:Key="Fg" Color="__Fg__"/>
+    <SolidColorBrush x:Key="Muted" Color="__Muted__"/>
+    <SolidColorBrush x:Key="Acc" Color="__Acc__"/>
+    <SolidColorBrush x:Key="OnAcc" Color="__OnAcc__"/>
+    <SolidColorBrush x:Key="Border" Color="__Border__"/>
+    <SolidColorBrush x:Key="Focus" Color="__Focus__"/>
+    <SolidColorBrush x:Key="Ok" Color="__Ok__"/>
+    <SolidColorBrush x:Key="Err" Color="__Err__"/>
+
+    <Style TargetType="GridViewColumnHeader">
+      <Setter Property="Background" Value="{StaticResource Bg}"/>
+      <Setter Property="Foreground" Value="{StaticResource Fg}"/>
+      <Setter Property="BorderBrush" Value="{StaticResource Border}"/>
+      <Setter Property="BorderThickness" Value="0,0,0,1"/>
+      <Setter Property="HorizontalContentAlignment" Value="Left"/>
+      <Setter Property="Padding" Value="10,6"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+    </Style>
+
+    <Style TargetType="Label">
+      <Setter Property="Foreground" Value="{StaticResource Fg}"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+      <Setter Property="Padding" Value="0,0,0,6"/>
+    </Style>
+
+    <Style TargetType="RadioButton">
+      <Setter Property="Foreground" Value="{StaticResource Fg}"/>
+      <Setter Property="Margin" Value="0,0,22,0"/>
+      <Setter Property="VerticalContentAlignment" Value="Center"/>
+    </Style>
+
+    <Style x:Key="Aiuto" TargetType="TextBlock">
+      <Setter Property="Foreground" Value="{StaticResource Muted}"/>
+      <Setter Property="TextWrapping" Value="Wrap"/>
+      <Setter Property="Margin" Value="0,6,0,0"/>
+    </Style>
+
+    <Style TargetType="TextBox">
+      <Setter Property="Background" Value="{StaticResource Surf}"/>
+      <Setter Property="Foreground" Value="{StaticResource Fg}"/>
+      <Setter Property="CaretBrush" Value="{StaticResource Fg}"/>
+      <Setter Property="BorderBrush" Value="{StaticResource Border}"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="Padding" Value="10,8"/>
+      <Setter Property="MinHeight" Value="42"/>
+      <Setter Property="VerticalContentAlignment" Value="Center"/>
+      <Style.Triggers>
+        <Trigger Property="IsKeyboardFocused" Value="True">
+          <Setter Property="BorderBrush" Value="{StaticResource Focus}"/>
+          <Setter Property="BorderThickness" Value="2"/>
+          <Setter Property="Padding" Value="9,7"/>
+        </Trigger>
+      </Style.Triggers>
+    </Style>
+
+    <Style TargetType="ListBox">
+      <Setter Property="Background" Value="{StaticResource Surf}"/>
+      <Setter Property="Foreground" Value="{StaticResource Fg}"/>
+      <Setter Property="BorderBrush" Value="{StaticResource Border}"/>
+      <Setter Property="BorderThickness" Value="1"/>
+    </Style>
+
+    <Style x:Key="Primario" TargetType="Button">
+      <Setter Property="Background" Value="{StaticResource Acc}"/>
+      <Setter Property="Foreground" Value="{StaticResource OnAcc}"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+      <Setter Property="MinHeight" Value="44"/>
+      <Setter Property="MinWidth" Value="140"/>
+      <Setter Property="Margin" Value="0,0,12,0"/>
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="Button">
+            <Border x:Name="Corpo" Background="{TemplateBinding Background}"
+                    BorderBrush="Transparent" BorderThickness="2" CornerRadius="4"
+                    Padding="18,8" SnapsToDevicePixels="True">
+              <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" RecognizesAccessKey="True"/>
+            </Border>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="Corpo" Property="Opacity" Value="0.9"/>
+              </Trigger>
+              <Trigger Property="IsKeyboardFocused" Value="True">
+                <Setter TargetName="Corpo" Property="BorderBrush" Value="{StaticResource Focus}"/>
+              </Trigger>
+              <Trigger Property="IsEnabled" Value="False">
+                <Setter TargetName="Corpo" Property="Background" Value="{StaticResource Surf}"/>
+                <Setter TargetName="Corpo" Property="BorderBrush" Value="{StaticResource Border}"/>
+                <Setter Property="Foreground" Value="{StaticResource Muted}"/>
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+
+    <Style x:Key="Secondario" TargetType="Button" BasedOn="{StaticResource Primario}">
+      <Setter Property="Background" Value="{StaticResource Surf}"/>
+      <Setter Property="Foreground" Value="{StaticResource Fg}"/>
+      <Setter Property="FontWeight" Value="Normal"/>
+      <Setter Property="Template">
+        <Setter.Value>
+          <ControlTemplate TargetType="Button">
+            <Border x:Name="Corpo" Background="{TemplateBinding Background}"
+                    BorderBrush="{StaticResource Border}" BorderThickness="1" CornerRadius="4"
+                    Padding="18,8" SnapsToDevicePixels="True">
+              <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" RecognizesAccessKey="True"/>
+            </Border>
+            <ControlTemplate.Triggers>
+              <Trigger Property="IsMouseOver" Value="True">
+                <Setter TargetName="Corpo" Property="BorderThickness" Value="2"/>
+              </Trigger>
+              <Trigger Property="IsKeyboardFocused" Value="True">
+                <Setter TargetName="Corpo" Property="BorderBrush" Value="{StaticResource Focus}"/>
+                <Setter TargetName="Corpo" Property="BorderThickness" Value="2"/>
+              </Trigger>
+              <Trigger Property="IsEnabled" Value="False">
+                <Setter Property="Foreground" Value="{StaticResource Muted}"/>
+                <Setter TargetName="Corpo" Property="BorderBrush" Value="{StaticResource Border}"/>
+              </Trigger>
+            </ControlTemplate.Triggers>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>

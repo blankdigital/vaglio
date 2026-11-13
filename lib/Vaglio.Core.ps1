@@ -119,4 +119,42 @@ function Invoke-VaglioScrittura {
     }
 }
 
+function Invoke-VaglioSuAccount {
+    # Anteprima o scrittura su più account. Un errore su un account non ferma gli altri: ognuno ha il suo esito.
+    param(
+        [Parameter(Mandatory)][ValidateSet('Anteprima', 'Scrittura')][string]$Tipo,
+        [Parameter(Mandatory)][object[]]$Account,
+        [Parameter(Mandatory)][string[]]$Domini,
+        [string]$CartellaBackup
+    )
+    foreach ($a in $Account) {
+        try {
+            if ($Tipo -eq 'Anteprima') {
+                $righe = @(Invoke-VaglioAnteprima -Server $a.Server -Prefs $a.Prefs -Domini $Domini)
+                [pscustomobject]@{ Account = $a.Nome; Ok = $true; Errore = ''; Righe = $righe; Esito = $null }
+            } else {
+                $cartella = Join-Path $CartellaBackup $a.Nome
+                $esito = Invoke-VaglioScrittura -Server $a.Server -Prefs $a.Prefs -Domini $Domini -CartellaBackup $cartella
+                [pscustomobject]@{ Account = $a.Nome; Ok = $true; Errore = ''; Righe = @(); Esito = $esito }
+            }
+        } catch {
+            [pscustomobject]@{ Account = $a.Nome; Ok = $false; Errore = $_.Exception.Message; Righe = @(); Esito = $null }
+        }
+    }
+}
+
+function ConvertTo-VaglioRighePiatte {
+    # Dagli esiti per account a un elenco unico, una riga per dominio, con la colonna Account. Un errore diventa una riga.
+    param([object[]]$Esiti)
+    foreach ($e in $Esiti) {
+        if (-not $e.Ok) {
+            [pscustomobject]@{ Account = $e.Account; Stato = 'Errore'; Dominio = $e.Errore; Tipo = 'ERRORE' }
+            continue
+        }
+        foreach ($r in $e.Righe) {
+            [pscustomobject]@{ Account = $e.Account; Stato = $r.Stato; Dominio = $r.Dominio; Tipo = $r.Tipo }
+        }
+    }
+}
+
 Test-VaglioNormalizzazione

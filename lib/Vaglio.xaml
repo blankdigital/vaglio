@@ -1,8 +1,8 @@
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         x:Name="Finestra"
-        Title="Vaglio, blacklist SpamAssassin"
-        Width="720" Height="800" MinWidth="460" MinHeight="560"
+        Title="Vaglio - SpamAssassin Blacklist Manager"
+        Width="740" Height="840" MinWidth="460" MinHeight="560"
         Background="__Bg__" Foreground="__Fg__"
         FontFamily="Segoe UI" FontSize="15"
         Language="it-IT"
@@ -11,141 +11,47 @@
         UseLayoutRounding="True">
 
   <Window.Resources>
-    <SolidColorBrush x:Key="Bg" Color="__Bg__"/>
-    <SolidColorBrush x:Key="Surf" Color="__Surf__"/>
-    <SolidColorBrush x:Key="Fg" Color="__Fg__"/>
-    <SolidColorBrush x:Key="Muted" Color="__Muted__"/>
-    <SolidColorBrush x:Key="Acc" Color="__Acc__"/>
-    <SolidColorBrush x:Key="OnAcc" Color="__OnAcc__"/>
-    <SolidColorBrush x:Key="Border" Color="__Border__"/>
-    <SolidColorBrush x:Key="Focus" Color="__Focus__"/>
-    <SolidColorBrush x:Key="Ok" Color="__Ok__"/>
-    <SolidColorBrush x:Key="Err" Color="__Err__"/>
-
-    <Style TargetType="GridViewColumnHeader">
-      <Setter Property="Background" Value="{StaticResource Bg}"/>
-      <Setter Property="Foreground" Value="{StaticResource Fg}"/>
-      <Setter Property="BorderBrush" Value="{StaticResource Border}"/>
-      <Setter Property="BorderThickness" Value="0,0,0,1"/>
-      <Setter Property="HorizontalContentAlignment" Value="Left"/>
-      <Setter Property="Padding" Value="10,6"/>
-      <Setter Property="FontWeight" Value="SemiBold"/>
-    </Style>
-
-    <Style TargetType="Label">
-      <Setter Property="Foreground" Value="{StaticResource Fg}"/>
-      <Setter Property="FontWeight" Value="SemiBold"/>
-      <Setter Property="Padding" Value="0,0,0,6"/>
-    </Style>
-
-    <Style x:Key="Aiuto" TargetType="TextBlock">
-      <Setter Property="Foreground" Value="{StaticResource Muted}"/>
-      <Setter Property="TextWrapping" Value="Wrap"/>
-      <Setter Property="Margin" Value="0,6,0,0"/>
-    </Style>
-
-    <Style TargetType="TextBox">
-      <Setter Property="Background" Value="{StaticResource Surf}"/>
-      <Setter Property="Foreground" Value="{StaticResource Fg}"/>
-      <Setter Property="CaretBrush" Value="{StaticResource Fg}"/>
-      <Setter Property="BorderBrush" Value="{StaticResource Border}"/>
-      <Setter Property="BorderThickness" Value="1"/>
-      <Setter Property="Padding" Value="10,8"/>
-      <Setter Property="MinHeight" Value="42"/>
-      <Setter Property="VerticalContentAlignment" Value="Center"/>
-      <Style.Triggers>
-        <Trigger Property="IsKeyboardFocused" Value="True">
-          <Setter Property="BorderBrush" Value="{StaticResource Focus}"/>
-          <Setter Property="BorderThickness" Value="2"/>
-          <Setter Property="Padding" Value="9,7"/>
-        </Trigger>
-      </Style.Triggers>
-    </Style>
-
-    <Style x:Key="Primario" TargetType="Button">
-      <Setter Property="Background" Value="{StaticResource Acc}"/>
-      <Setter Property="Foreground" Value="{StaticResource OnAcc}"/>
-      <Setter Property="FontWeight" Value="SemiBold"/>
-      <Setter Property="MinHeight" Value="44"/>
-      <Setter Property="MinWidth" Value="140"/>
-      <Setter Property="Margin" Value="0,0,12,0"/>
-      <Setter Property="Template">
-        <Setter.Value>
-          <ControlTemplate TargetType="Button">
-            <Border x:Name="Corpo" Background="{TemplateBinding Background}"
-                    BorderBrush="Transparent" BorderThickness="2" CornerRadius="4"
-                    Padding="18,8" SnapsToDevicePixels="True">
-              <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" RecognizesAccessKey="True"/>
-            </Border>
-            <ControlTemplate.Triggers>
-              <Trigger Property="IsMouseOver" Value="True">
-                <Setter TargetName="Corpo" Property="Opacity" Value="0.9"/>
-              </Trigger>
-              <Trigger Property="IsKeyboardFocused" Value="True">
-                <Setter TargetName="Corpo" Property="BorderBrush" Value="{StaticResource Focus}"/>
-              </Trigger>
-              <Trigger Property="IsEnabled" Value="False">
-                <Setter TargetName="Corpo" Property="Background" Value="{StaticResource Surf}"/>
-                <Setter TargetName="Corpo" Property="BorderBrush" Value="{StaticResource Border}"/>
-                <Setter Property="Foreground" Value="{StaticResource Muted}"/>
-              </Trigger>
-            </ControlTemplate.Triggers>
-          </ControlTemplate>
-        </Setter.Value>
-      </Setter>
-    </Style>
-
-    <Style x:Key="Secondario" TargetType="Button" BasedOn="{StaticResource Primario}">
-      <Setter Property="Background" Value="{StaticResource Surf}"/>
-      <Setter Property="Foreground" Value="{StaticResource Fg}"/>
-      <Setter Property="FontWeight" Value="Normal"/>
-      <Setter Property="Template">
-        <Setter.Value>
-          <ControlTemplate TargetType="Button">
-            <Border x:Name="Corpo" Background="{TemplateBinding Background}"
-                    BorderBrush="{StaticResource Border}" BorderThickness="1" CornerRadius="4"
-                    Padding="18,8" SnapsToDevicePixels="True">
-              <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" RecognizesAccessKey="True"/>
-            </Border>
-            <ControlTemplate.Triggers>
-              <Trigger Property="IsMouseOver" Value="True">
-                <Setter TargetName="Corpo" Property="BorderThickness" Value="2"/>
-              </Trigger>
-              <Trigger Property="IsKeyboardFocused" Value="True">
-                <Setter TargetName="Corpo" Property="BorderBrush" Value="{StaticResource Focus}"/>
-                <Setter TargetName="Corpo" Property="BorderThickness" Value="2"/>
-              </Trigger>
-              <Trigger Property="IsEnabled" Value="False">
-                <Setter Property="Foreground" Value="{StaticResource Muted}"/>
-                <Setter TargetName="Corpo" Property="BorderBrush" Value="{StaticResource Border}"/>
-              </Trigger>
-            </ControlTemplate.Triggers>
-          </ControlTemplate>
-        </Setter.Value>
-      </Setter>
-    </Style>
+    __STILI__
   </Window.Resources>
 
   <ScrollViewer VerticalScrollBarVisibility="Auto">
     <StackPanel Margin="28,26,28,22">
 
-      <TextBlock Text="Vaglio" FontSize="30" FontWeight="SemiBold" Foreground="{StaticResource Fg}"
-                 AutomationProperties.Name="Vaglio"/>
+      <TextBlock Text="Vaglio" FontSize="30" FontWeight="SemiBold" Foreground="{StaticResource Fg}"/>
       <TextBlock Style="{StaticResource Aiuto}" FontSize="16" Margin="0,4,0,26"
-                 Text="Aggiunge domini spam alla blacklist di SpamAssassin su un hosting cPanel, via SSH. Prima si controlla l'anteprima, poi si scrive."/>
+                 Text="SpamAssassin Blacklist Manager. Aggiunge domini spam alla blacklist su uno o più account cPanel, via SSH."/>
 
-      <Label x:Name="EtServer" Content="_Server SSH" Target="{Binding ElementName=TxtServer}"/>
-      <TextBox x:Name="TxtServer"
-               AutomationProperties.HelpText="Alias di ~/.ssh/config oppure utente@host. Non servono password: si usa la chiave SSH."/>
-      <TextBlock Style="{StaticResource Aiuto}"
-                 Text="Alias di ~/.ssh/config oppure utente@host. Vaglio non chiede mai una password."/>
+      <!-- Account salvati -->
+      <Label x:Name="EtAccount" Content="_Account salvati" Target="{Binding ElementName=LstAccount}"/>
+      <ListBox x:Name="LstAccount" MinHeight="96" MaxHeight="180" SelectionMode="Single"
+               AutomationProperties.Name="Account salvati"
+               ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+        <ListBox.ItemTemplate>
+          <DataTemplate>
+            <StackPanel Orientation="Horizontal" Margin="2,4">
+              <TextBlock Text="{Binding Nome}" FontWeight="SemiBold" Margin="0,0,14,0"/>
+              <TextBlock Text="{Binding Server}" Foreground="{StaticResource Muted}"/>
+            </StackPanel>
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+      <TextBlock x:Name="TxtAccountVuoto" Style="{StaticResource Aiuto}" Visibility="Collapsed"
+                 Text="Nessun account salvato. Premi Gestisci account per aggiungerne uno."/>
+      <Button x:Name="BtnGestisci" Content="_Gestisci account…" Style="{StaticResource Secondario}"
+              HorizontalAlignment="Left" Margin="0,12,0,0"/>
 
-      <Label Content="_File user_prefs sul server" Target="{Binding ElementName=TxtPrefs}" Margin="0,22,0,0"/>
-      <TextBox x:Name="TxtPrefs" Text="~/.spamassassin/user_prefs"
-               AutomationProperties.HelpText="Percorso del file user_prefs sul server. Di solito ~/.spamassassin/user_prefs."/>
-      <TextBlock Style="{StaticResource Aiuto}" Text="Di solito ~/.spamassassin/user_prefs."/>
+      <!-- Dove bloccare -->
+      <Label Content="Dove bloccare" Margin="0,26,0,6"/>
+      <StackPanel Orientation="Horizontal">
+        <RadioButton x:Name="RbUno" GroupName="Destinazione" Content="_Un solo server" IsChecked="True"/>
+        <RadioButton x:Name="RbAlcuni" GroupName="Destinazione" Content="_Alcuni server"/>
+        <RadioButton x:Name="RbTutti" GroupName="Destinazione" Content="_Tutti i server"/>
+      </StackPanel>
+      <TextBlock x:Name="TxtDestinazione" Style="{StaticResource Aiuto}"
+                 Text="Seleziona un account nell'elenco. Con più account, usa Spazio o Ctrl+clic per sceglierne altri."/>
 
-      <Label Content="_Domini o indirizzi" Target="{Binding ElementName=TxtDomini}" Margin="0,22,0,0"/>
+      <!-- Domini -->
+      <Label Content="_Domini o indirizzi" Target="{Binding ElementName=TxtDomini}" Margin="0,26,0,0"/>
       <TextBox x:Name="TxtDomini" AcceptsReturn="True" TextWrapping="Wrap"
                VerticalScrollBarVisibility="Auto" MinHeight="132" VerticalContentAlignment="Top"
                AutomationProperties.HelpText="Uno per riga oppure separati da virgole. Gli indirizzi e gli URL vengono ridotti al dominio."/>
@@ -165,12 +71,13 @@
       <Label Content="Esito" Margin="0,26,0,0" Target="{Binding ElementName=LstEsito}"/>
       <ListView x:Name="LstEsito" MinHeight="170" Background="{StaticResource Surf}"
                 Foreground="{StaticResource Fg}" BorderBrush="{StaticResource Border}" BorderThickness="1"
-                AutomationProperties.Name="Esito per dominio"
+                AutomationProperties.Name="Esito per account e dominio"
                 ScrollViewer.HorizontalScrollBarVisibility="Disabled">
         <ListView.View>
           <GridView>
-            <GridViewColumn Header="Stato" Width="170" DisplayMemberBinding="{Binding Stato}"/>
-            <GridViewColumn Header="Dominio" Width="380" DisplayMemberBinding="{Binding Dominio}"/>
+            <GridViewColumn Header="Account" Width="150" DisplayMemberBinding="{Binding Account}"/>
+            <GridViewColumn Header="Stato" Width="140" DisplayMemberBinding="{Binding Stato}"/>
+            <GridViewColumn Header="Dominio" Width="260" DisplayMemberBinding="{Binding Dominio}"/>
           </GridView>
         </ListView.View>
       </ListView>

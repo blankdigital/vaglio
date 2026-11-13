@@ -3,6 +3,8 @@
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot '..\lib\Vaglio.Core.ps1')
 . (Join-Path $PSScriptRoot '..\lib\Vaglio.Tema.ps1')
+. (Join-Path $PSScriptRoot '..\lib\Vaglio.Config.ps1')
+$env:VAGLIO_CONFIG_DIR = Join-Path ([IO.Path]::GetTempPath()) ('vaglio-test-' + [guid]::NewGuid().ToString('N'))
 
 $script:Fallimenti = 0
 function Assert-Uguale($atteso, $ottenuto, [string]$nome) {
@@ -52,10 +54,60 @@ foreach ($tema in 'chiaro', 'scuro') {
 }
 
 Write-Host 'Palette e XAML'
-$xaml = Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $PSScriptRoot '..\lib\Vaglio.xaml')
-$token = [regex]::Matches($xaml, '__(\w+)__') | ForEach-Object { $_.Groups[1].Value } | Sort-Object -Unique
-$mancanti = @($token | Where-Object { -not (Get-VaglioPalette -Tema chiaro).ContainsKey($_) })
-Assert-Uguale 0 $mancanti.Count 'ogni token del XAML esiste nella palette'
+$stiliXaml = Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $PSScriptRoot '..\lib\Vaglio.Stili.xaml')
+$finestre = 'Vaglio.xaml', 'Vaglio.Gestione.xaml'
+$tuttiToken = @()
+foreach ($file in $finestre) {
+    $xaml = Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $PSScriptRoot "..\lib\$file")
+    $tuttiToken += [regex]::Matches($xaml + $stiliXaml, '__(\w+)__') | ForEach-Object { $_.Groups[1].Value }
+}
+$tuttiToken = @($tuttiToken | Where-Object { $_ -ne 'STILI' } | Sort-Object -Unique)
+$mancanti = @($tuttiToken | Where-Object { -not (Get-VaglioPalette -Tema chiaro).ContainsKey($_) })
+Assert-Uguale 0 $mancanti.Count 'ogni token dei XAML esiste nella palette'
+
+Write-Host 'Finestre WPF'
+Add-Type -AssemblyName PresentationFramework, PresentationCore, WindowsBase, System.Xaml
+foreach ($tema in 'chiaro', 'scuro') {
+    $p = Get-VaglioPalette -Tema $tema
+    foreach ($file in $finestre) {
+        $xaml = Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $PSScriptRoot "..\lib\$file")
+        $xaml = $xaml.Replace('__STILI__', $stiliXaml)
+        foreach ($k in $p.Keys) { $xaml = $xaml.Replace("__${k}__", $p[$k]) }
+        $ok = $true
+        try { $finestra = [System.Windows.Markup.XamlReader]::Parse($xaml) } catch { $ok = $false; $errore = $_.Exception.Message }
+        Assert-Vero $ok "$file ($tema) si legge come WPF$(if (-not $ok) { ': ' + $errore })"
+        if ($ok) {
+            Assert-Vero ($finestra.Language.IetfLanguageTag -eq 'it-IT') "$file ($tema) lingua it-IT"
+            Assert-Vero ($null -ne $finestra.FindName('LstAccount') -or $null -ne $finestra.FindName('LstGest')) "$file ($tema) ha l'elenco account"
+        }
+    }
+}
+
+Write-Host 'Account salvati'
+Assert-Uguale 0 @(Get-VaglioAccounts).Count 'nessun file: lista vuota'
+Save-VaglioAccount -Account ([pscustomobject]@{ Nome = 'sito-a'; Server = 'alias-a'; Prefs = '~/.spamassassin/user_prefs' })
+Save-VaglioAccount -Account ([pscustomobject]@{ Nome = 'sito-b'; Server = 'user@b.example'; Prefs = '~/x/prefs' })
+$letti = @(Get-VaglioAccounts)
+Assert-Uguale 'sito-a,sito-b' (($letti | ForEach-Object Nome) -join ',') 'salvataggio e rilettura'
+Assert-Uguale 'user@b.example' (($letti | Where-Object Nome -eq 'sito-b').Server) 'server salvato come scritto'
+$errDoppio = $null; try { Save-VaglioAccount -Account ([pscustomobject]@{ Nome = 'sito-a'; Server = 'x'; Prefs = 'y' }) } catch { $errDoppio = $_.Exception.Message }
+Assert-Vero ($errDoppio -match 'Esiste già') 'nome duplicato rifiutato'
+$errSpazi = $null; try { Save-VaglioAccount -Account ([pscustomobject]@{ Nome = 'nuovo'; Server = 'con spazio'; Prefs = 'y' }) } catch { $errSpazi = $_.Exception.Message }
+Assert-Vero ($errSpazi -match 'spazi') 'server con spazi rifiutato'
+Save-VaglioAccount -Account ([pscustomobject]@{ Nome = 'sito-c'; Server = 'alias-c'; Prefs = 'p' }) -NomeOriginale 'sito-b'
+Assert-Uguale 'sito-a,sito-c' ((@(Get-VaglioAccounts) | ForEach-Object Nome) -join ',') 'rinomina sostituisce, non duplica'
+Remove-VaglioAccount -Nome 'sito-c'
+Assert-Uguale 'sito-a' ((@(Get-VaglioAccounts) | ForEach-Object Nome) -join ',') 'rimozione'
+Set-Content -LiteralPath (Get-VaglioConfigPath) -Value '{ rotto' -Encoding utf8
+$errCorrotto = $null; try { Get-VaglioAccounts | Out-Null } catch { $errCorrotto = $_.Exception.Message }
+Assert-Vero ($errCorrotto -match 'non si legge') 'file corrotto segnalato'
+Assert-Uguale '{ rotto' ((Get-Content -Raw -LiteralPath (Get-VaglioConfigPath)).Trim()) 'file corrotto non sovrascritto'
+
+Write-Host 'Righe per account'
+$piatte = @(ConvertTo-VaglioRighePiatte @(
+    [pscustomobject]@{ Account = 'a'; Ok = $true; Errore = ''; Righe = @([pscustomobject]@{ Stato = 'Nuovo'; Dominio = 'x.it'; Tipo = 'NUOVO' }) },
+    [pscustomobject]@{ Account = 'b'; Ok = $false; Errore = 'SSH non è riuscito'; Righe = @() }))
+Assert-Uguale 'a:Nuovo:x.it|b:Errore:SSH non è riuscito' (($piatte | ForEach-Object { "$($_.Account):$($_.Stato):$($_.Dominio)" }) -join '|') 'un errore è una riga, non interrompe'
 
 Write-Host ''
 if ($script:Fallimenti -gt 0) { Write-Host "$($script:Fallimenti) test falliti"; exit 1 }
