@@ -20,7 +20,11 @@ function New-VaglioFinestra([string]$file) {
     $stili = Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $PSScriptRoot 'lib\Vaglio.Stili.xaml')
     $xaml = $xaml.Replace('__STILI__', $stili)
     foreach ($chiave in $script:Palette.Keys) { $xaml = $xaml.Replace("__${chiave}__", $script:Palette[$chiave]) }
-    [System.Windows.Markup.XamlReader]::Parse($xaml)
+    $finestra = [System.Windows.Markup.XamlReader]::Parse($xaml)
+    # Icona della finestra: è anche quella mostrata nella barra delle applicazioni.
+    $ico = Join-Path $PSScriptRoot 'assets\vaglio.ico'
+    if (Test-Path -LiteralPath $ico) { $finestra.Icon = [System.Windows.Media.Imaging.BitmapFrame]::Create([Uri]::new($ico)) }
+    $finestra
 }
 
 function Get-Controlli($finestra, [string[]]$nomi) {
