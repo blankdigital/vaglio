@@ -352,7 +352,7 @@ function Open-Blacklist {
     $script:BlVoci = @()
     $script:BlMsg = ''
     $script:BlOccupato = $false
-    $script:B.LstVoci.Add_SelectionChanged({ Update-BlPulsanti })
+    $script:B.LstVoci.Add_SelectionChanged({ Set-BlSelezione })
     $script:B.BtnBlRicarica.Add_Click({ Start-BlLista })
     $script:B.BtnBlElimina.Add_Click({ Start-BlElimina })
     $script:B.BtnBlModifica.Add_Click({ Start-BlModifica })
@@ -387,6 +387,16 @@ function Update-BlPulsanti {
     $sel = @($script:B.LstVoci.SelectedItems | ForEach-Object { $_ })
     $script:B.BtnBlElimina.IsEnabled = ($sel.Count -gt 0)
     $script:B.BtnBlModifica.IsEnabled = ($sel.Count -eq 1) -and [bool]$sel[0].Possibile
+    if ($sel.Count -gt 1) { Set-BlStato 'Per modificare seleziona una sola voce. Con più voci puoi solo eliminarle.' }
+}
+
+# Alla selezione di una voce modificabile, il campo Nuovo dominio si precompila con il dominio attuale.
+function Set-BlSelezione {
+    Update-BlPulsanti
+    $sel = @($script:B.LstVoci.SelectedItems | ForEach-Object { $_ })
+    if ($sel.Count -eq 1 -and $sel[0].Possibile) {
+        $script:B.TxtBlNuovo.Text = [string]$sel[0].Dominio
+    }
 }
 
 function Start-BlLista {
@@ -409,6 +419,7 @@ function Show-BlListaEsito($r) {
             Voce         = [string]$v.Testo
             Modificabile = $(if ($v.Modificabile) { 'Sì' } else { 'No' })
             Testo        = [string]$v.Testo
+            Dominio      = [string]$v.Dominio
             Possibile    = [bool]$v.Modificabile
         })
     }
@@ -444,6 +455,11 @@ function Start-BlModifica {
     $voce = @($script:B.LstVoci.SelectedItems | ForEach-Object { $_ })[0]
     if (-not $voce) { return }
     $nuovo = $script:B.TxtBlNuovo.Text.Trim()
+    if (-not $nuovo) {
+        Show-BlErrore 'Scrivi il nuovo dominio nel campo «Nuovo dominio», poi premi Modifica.'
+        [void]$script:B.TxtBlNuovo.Focus()
+        return
+    }
     $norm = ConvertTo-VaglioDominio $nuovo
     if (-not $norm) {
         Show-BlErrore "«$nuovo» non è un dominio valido."
