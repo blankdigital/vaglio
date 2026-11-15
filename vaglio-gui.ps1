@@ -114,7 +114,8 @@ function Set-Modalita {
         $ui.TxtDestinazione.Text = 'Seleziona un account nell''elenco.'
         if ($ui.LstAccount.SelectedItems.Count -gt 1) { $ui.LstAccount.SelectedItems.Clear(); $ui.LstAccount.SelectedIndex = 0 }
     } elseif ($ui.RbAlcuni.IsChecked) {
-        $ui.LstAccount.SelectionMode = 'Extended'
+        # Multiple: Spazio e Ctrl+clic aggiungono o tolgono una riga. Extended invece sostituisce la selezione con Spazio.
+        $ui.LstAccount.SelectionMode = 'Multiple'
         $ui.LstAccount.IsEnabled = $true
         $ui.TxtDestinazione.Text = 'Scegli più account con Spazio oppure Ctrl+clic.'
     } else {
