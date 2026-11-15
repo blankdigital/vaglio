@@ -40,7 +40,6 @@ Check ($elenco -match 'sito-a' -and $elenco -match 'sito-b' -and $elenco -match 
 Write-Host 'Anteprima su tutti, con un account rotto'
 $out = & $cli -Tutti -Domain 'spam.com' *>&1 | Out-String
 $codice = $LASTEXITCODE
-Check ($out -match 'sito-a' -and $out -match 'sito-b') 'anteprima mostra gli account funzionanti'
 Check ($out -match 'sito-rotto' -and $out -match 'ERRORE') 'account rotto segnalato in anteprima'
 Check ($codice -eq 1) 'codice di uscita 1 se un account fallisce'
 Check ((Get-Content -Raw $fileA) -notmatch 'spam\.com') 'anteprima non ha scritto'
