@@ -1,6 +1,6 @@
 #!/bin/bash
 # copy-guard: ignore (GIA è il codice di stato del protocollo, non testo)
-# Eseguito sul server via ssh, lanciato da Vaglio.Core.ps1.
+# Eseguito sul server via ssh, lanciato da Vaglio.Core.ps1. Autore: Alessandro De Cenzo, https://alessandrodecenzo.it
 # Uso: bash -s -- <file_prefs> <modo> <argomenti...>
 #   ANTEPRIMA <dominio>...: dice NUOVO o GIA per ogni dominio, non scrive.
 #   APPLICA <dominio>...:   come ANTEPRIMA, poi scrive le righe nuove (con backup del file).

@@ -159,6 +159,10 @@ Il primo copre normalizzazione, parsing dell'output, gestione degli account, con
 - La finestra di gestione account non è coperta da un test automatico di interazione: è verificata nel caricamento XAML e a mano.
 - Il test su un server reale non è ancora stato fatto: la logica è verificata in locale con SSH simulato.
 
+## Autore
+
+Vaglio è di [Alessandro De Cenzo](https://alessandrodecenzo.it), che scrive del lavoro dietro questo strumento sul blog.
+
 ## Licenza
 
 MIT, vedi [LICENSE](LICENSE). Il repo è privato finché non è pronto alla pubblicazione.

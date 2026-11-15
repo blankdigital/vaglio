@@ -1,5 +1,5 @@
 ﻿# copy-guard: ignore (il token GIA è il codice di stato del protocollo remoto, non testo)
-# Vaglio, nucleo condiviso da GUI e CLI.
+# Vaglio, nucleo condiviso da GUI e CLI. Autore: Alessandro De Cenzo, https://alessandrodecenzo.it
 # Nessuna interazione qui: ogni funzione restituisce dati o lancia un'eccezione con un messaggio leggibile.
 
 $script:RemotoPath = Join-Path $PSScriptRoot 'remote.sh'

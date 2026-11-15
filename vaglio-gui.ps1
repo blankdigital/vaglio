@@ -1,4 +1,5 @@
-﻿# Vaglio, interfaccia grafica. Avvio: doppio clic su Vaglio.vbs, oppure
+﻿# Vaglio, interfaccia grafica. Autore: Alessandro De Cenzo, https://alessandrodecenzo.it
+# Avvio: doppio clic su Vaglio.vbs, oppure
 #   powershell -STA -File vaglio-gui.ps1
 
 # WPF richiede un thread STA. Se lo script arriva in MTA, si riavvia con -STA.
