@@ -53,6 +53,8 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+# Con powershell.exe -File la virgola non divide l'array: si divide qui, nomi con spazi compresi.
+if ($Account) { $Account = @($Account | ForEach-Object { $_ -split ',' } | ForEach-Object { $_.Trim() } | Where-Object { $_ }) }
 . (Join-Path $PSScriptRoot 'lib\Vaglio.Core.ps1')
 . (Join-Path $PSScriptRoot 'lib\Vaglio.Config.ps1')
 
