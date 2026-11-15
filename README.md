@@ -165,4 +165,4 @@ Vaglio è di [Alessandro De Cenzo](https://alessandrodecenzo.it), che scrive del
 
 ## Licenza
 
-MIT, vedi [LICENSE](LICENSE). Il repo è privato finché non è pronto alla pubblicazione.
+MIT, vedi [LICENSE](LICENSE).
