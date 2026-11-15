@@ -38,7 +38,7 @@
               HorizontalAlignment="Left" Margin="0,14,0,0"/>
 
       <Label Content="Modifica" Margin="0,24,0,6"/>
-      <Label Content="_Nome" Target="{Binding ElementName=TxtNome}"/>
+      <Label Content="No_me" Target="{Binding ElementName=TxtNome}"/>
       <TextBox x:Name="TxtNome" MaxLength="40"
                AutomationProperties.HelpText="Come lo riconosci nell'elenco. Esempio: sito-cliente-a."/>
 
@@ -58,8 +58,8 @@
                  Foreground="{StaticResource Fg}" AutomationProperties.LiveSetting="Polite"/>
 
       <StackPanel Orientation="Horizontal" Margin="0,22,0,0">
-        <Button x:Name="BtnSalva" Content="_Salva" Style="{StaticResource Primario}" IsDefault="True"/>
-        <Button x:Name="BtnElimina" Content="_Elimina" Style="{StaticResource Secondario}" IsEnabled="False"
+        <Button x:Name="BtnSalva" Content="Sal_va" Style="{StaticResource Primario}" IsDefault="True"/>
+        <Button x:Name="BtnElimina" Content="Elim_ina" Style="{StaticResource Secondario}" IsEnabled="False"
                 AutomationProperties.HelpText="Rimuove l'account dall'elenco di Vaglio. Non tocca il server."/>
       </StackPanel>
 

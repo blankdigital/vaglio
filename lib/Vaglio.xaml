@@ -22,7 +22,7 @@
                  Text="SpamAssassin Blacklist Manager. Aggiunge domini spam alla blacklist su uno o più account cPanel, via SSH."/>
 
       <!-- Account salvati -->
-      <Label x:Name="EtAccount" Content="_Account salvati" Target="{Binding ElementName=LstAccount}"/>
+      <Label x:Name="EtAccount" Content="Account _salvati" Target="{Binding ElementName=LstAccount}"/>
       <ListBox x:Name="LstAccount" MinHeight="96" MaxHeight="180" SelectionMode="Single"
                AutomationProperties.Name="Account salvati"
                ScrollViewer.HorizontalScrollBarVisibility="Disabled">
@@ -62,8 +62,8 @@
                  Text="Uno per riga oppure separati da virgole. Indirizzi e URL vengono ridotti al dominio."/>
 
       <StackPanel Orientation="Horizontal" Margin="0,26,0,0">
-        <Button x:Name="BtnAnteprima" Content="_Anteprima" Style="{StaticResource Primario}" IsDefault="True"/>
-        <Button x:Name="BtnScrivi" Content="Scri_vi sul server" Style="{StaticResource Secondario}" IsEnabled="False"
+        <Button x:Name="BtnAnteprima" Content="Ante_prima" Style="{StaticResource Primario}" IsDefault="True"/>
+        <Button x:Name="BtnScrivi" Content="Scr_ivi sul server" Style="{StaticResource Secondario}" IsEnabled="False"
                 AutomationProperties.HelpText="Attivo solo dopo un'anteprima con domini nuovi. Chiede conferma prima di scrivere."/>
       </StackPanel>
 

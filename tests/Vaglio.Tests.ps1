@@ -111,5 +111,14 @@ $piatte = @(ConvertTo-VaglioRighePiatte @(
 Assert-Uguale 'a:Nuovo:x.it|b:Errore:SSH non è riuscito' (($piatte | ForEach-Object { "$($_.Account):$($_.Stato):$($_.Dominio)" }) -join '|') 'un errore è una riga, non interrompe'
 
 Write-Host ''
+Write-Host 'Scorciatoie da tastiera'
+foreach ($file in 'Vaglio.xaml', 'Vaglio.Gestione.xaml', 'Vaglio.Blacklist.xaml') {
+    $x = Get-Content -Raw -Encoding UTF8 -LiteralPath (Join-Path $PSScriptRoot "..\lib\$file")
+    # Solo etichette e pulsanti (Content="..."): i campi di testo non hanno scorciatoie.
+    $testi = [regex]::Matches($x, 'Content="([^"]*_[^"_][^"]*)"') | ForEach-Object { $_.Groups[1].Value }
+    $lettere = @($testi | ForEach-Object { [regex]::Match($_, '_(\w)').Groups[1].Value.ToUpper() } | Where-Object { $_ })
+    $doppie = @($lettere | Group-Object | Where-Object { $_.Count -gt 1 } | ForEach-Object { $_.Name })
+    Assert-Uguale 0 $doppie.Count "${file}: nessuna lettera Alt ripetuta"
+}
 if ($script:Fallimenti -gt 0) { Write-Host "$($script:Fallimenti) test falliti"; exit 1 }
 Write-Host 'Tutti i test passati.'
