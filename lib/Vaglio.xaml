@@ -92,6 +92,11 @@
 
       <TextBlock x:Name="TxtBackup" Style="{StaticResource Aiuto}" Margin="0,10,0,0"/>
 
+      <TextBlock Style="{StaticResource Aiuto}" Margin="0,18,0,0">
+        <Run Text="Vaglio, di Alessandro De Cenzo. Blog: "/><Hyperlink x:Name="LinkBlog" NavigateUri="https://alessandrodecenzo.it"
+          Foreground="{StaticResource Acc}" AutomationProperties.Name="Blog di Alessandro De Cenzo, alessandrodecenzo.it">alessandrodecenzo.it</Hyperlink>
+      </TextBlock>
+
       <Button x:Name="BtnChiudi" Content="_Chiudi" Style="{StaticResource Secondario}" IsCancel="True"
               HorizontalAlignment="Right" Margin="0,24,0,0"/>
     </StackPanel>

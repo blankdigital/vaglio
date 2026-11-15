@@ -54,7 +54,7 @@ function Get-Controlli($finestra, [string[]]$nomi) {
 
 $win = New-VaglioFinestra 'Vaglio.xaml'
 $ui = Get-Controlli $win @('LstAccount', 'TxtAccountVuoto', 'BtnGestisci', 'RbUno', 'RbAlcuni', 'RbTutti',
-    'TxtDestinazione', 'TxtDomini', 'BtnAnteprima', 'BtnScrivi', 'TxtErrore', 'LstEsito', 'TxtStato', 'TxtBackup', 'BtnChiudi', 'BtnBlacklist')
+    'TxtDestinazione', 'TxtDomini', 'BtnAnteprima', 'BtnScrivi', 'TxtErrore', 'LstEsito', 'TxtStato', 'TxtBackup', 'BtnChiudi', 'BtnBlacklist', 'LinkBlog')
 
 $cartellaBackup = Join-Path $HOME 'Vaglio-backup'
 $ui.TxtBackup.Text = "Copie di sicurezza in: $cartellaBackup"
@@ -498,6 +498,9 @@ function Show-BlModificaEsito($r) {
     $script:B.TxtBlNuovo.Text = ''
     Start-BlLista
 }
+
+# Il link al blog si apre nel browser predefinito.
+$ui.LinkBlog.Add_RequestNavigate({ param($s, $e); Start-Process $e.Uri.AbsoluteUri; $e.Handled = $true })
 
 $ui.BtnChiudi.Add_Click({ $win.Close() })
 
