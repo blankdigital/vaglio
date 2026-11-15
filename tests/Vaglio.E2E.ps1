@@ -38,7 +38,7 @@ $elenco = & $cli -Elenca | Out-String
 Check ($elenco -match 'sito-a' -and $elenco -match 'sito-b' -and $elenco -match 'sito-rotto') 'tre account visibili con -Elenca'
 
 Write-Host 'Anteprima su tutti, con un account rotto'
-$out = & $cli -Tutti -Domain 'spam.com' | Out-String
+$out = & $cli -Tutti -Domain 'spam.com' *>&1 | Out-String
 $codice = $LASTEXITCODE
 Check ($out -match 'sito-a' -and $out -match 'sito-b') 'anteprima mostra gli account funzionanti'
 Check ($out -match 'sito-rotto' -and $out -match 'ERRORE') 'account rotto segnalato in anteprima'
@@ -46,7 +46,7 @@ Check ($codice -eq 1) 'codice di uscita 1 se un account fallisce'
 Check ((Get-Content -Raw $fileA) -notmatch 'spam\.com') 'anteprima non ha scritto'
 
 Write-Host 'Scrittura solo sugli account con domini nuovi'
-$out = & $cli -Tutti -Domain 'spam.com,vecchio.com' -Apply -BackupDir (Join-Path $work 'bk') | Out-String
+$out = & $cli -Tutti -Domain 'spam.com,vecchio.com' -Apply -BackupDir (Join-Path $work 'bk') *>&1 | Out-String
 $codice = $LASTEXITCODE
 Check ((Get-Content -Raw $fileA) -match 'blacklist_from \*@spam\.com') 'account A ha ricevuto spam.com'
 Check ((Get-Content -Raw $fileB) -match 'blacklist_from \*@spam\.com') 'account B ha ricevuto spam.com'

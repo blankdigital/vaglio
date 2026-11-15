@@ -134,7 +134,8 @@ if ($esame.Scartati) { Write-Warning ('Scartati (non sono domini): ' + ($esame.S
 if (-not $esame.Validi) { throw 'Nessun dominio valido.' }
 
 $anteprime = @(Invoke-VaglioSuAccount -Tipo Anteprima -Account $destinazioni -Domini $esame.Validi)
-ConvertTo-VaglioRighePiatte $anteprime | Select-Object Account, Stato, Dominio
+# Out-Host stampa subito: con exit 1 (account in errore) l'output in coda andrebbe perso.
+ConvertTo-VaglioRighePiatte $anteprime | Select-Object Account, Stato, Dominio | Out-Host
 
 $anteprimeFallite = @($anteprime | Where-Object { -not $_.Ok })
 foreach ($f in $anteprimeFallite) { Write-Host "[$($f.Account)] ERRORE in anteprima: $($f.Errore)" -ForegroundColor Red }
